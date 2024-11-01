@@ -1,0 +1,13 @@
+﻿@model S3_Web.Models.USStateDocumentOutputViewModel
+
+@if (Model?.zplImageBase64 != null)
+{
+    <img src="data:image/png;base64,@Model.zplImageBase64" alt="ZPL Image" style="width: 500px; height: auto;"/>
+    <br />
+    <br />
+    @Model.zplString
+}
+else
+{
+    <p>Image not available.</p> <!-- Optional message if image data is missing -->
+}

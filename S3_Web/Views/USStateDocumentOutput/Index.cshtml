@@ -1,0 +1,189 @@
+﻿@model IEnumerable<S3_Web.Models.USStateDocumentOutput>
+
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        h2 {
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            color: #333;
+        }
+
+        input[type="text"] {
+            margin: 5px 0;
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* Style for empty input feedback */
+        .input-error {
+            border: 2px solid red;
+            background-color: #ffe6e6;
+        }
+
+        .error-message {
+            color: red;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+    </style>
+
+    <h2>Documents by state</h2>
+
+    <form method="get" action="">
+        <div>
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" placeholder="Enter name" />
+            <span class="error-message" id="name-error">Please enter your name.</span>
+        </div>
+        <br />
+        <div>
+            <label for="address">Address:</label>
+            <input type="text" id="address" name="address" placeholder="Enter address" />
+            <span class="error-message" id="address-error">Please enter your address.</span>
+        </div>
+        <br />
+        <div>
+            <label for="csz">City, State, ZIP:</label>
+            <input type="text" id="csz" name="csz" placeholder="Enter City, State, and ZIP" />
+            <span class="error-message" id="csz-error">Please enter the City, State, and ZIP.</span>
+        </div>
+        <br />
+    </form>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>State</th>
+                <th>Document</th>
+                <th>Output Format</th>
+                <th>Effective Dates</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+            <tr>
+                <td>@(item.USStateDocumentType?.USState?.StateName ?? "")</td>
+                <td>@item.USStateDocumentType?.DocumentType?.DocumentTypeName</td>
+                <td>@item.DocumentOutputType?.DocumentOutputTypeName</td>
+                <td>@(item.EffectiveStart.ToShortDateString() + " - " + (item.EffectiveEnd?.ToShortDateString() ?? "Present"))</td>
+                <td>
+                    <button type="button" onclick="postDetails(
+                    '@item.USStateDocumentType?.USState?.StateCode',
+                    '@item.USStateDocumentType?.DocumentType?.DocumentTypeName',
+                    '@item.DocumentOutputType?.DocumentOutputTypeName',
+                    '@item.EffectiveStart.ToString("yyyyMMdd")',
+                    '@(item.EffectiveEnd?.ToString("yyyyMMdd") ?? "null")'
+                    )">Generate</button>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+
+    <script>
+        async function postDetails(state, doc, format, effectiveStart, effectiveEnd) {
+            // Get values from input fields
+            const name = document.getElementById("name").value;
+            const address = document.getElementById("address").value;
+            const csz = document.getElementById("csz").value;
+
+
+            // Construct the JSON payload
+            const payload = {
+                state: state,
+                document: doc,
+                format: format,
+                effectiveStart: effectiveStart,
+                effectiveEnd: effectiveEnd,
+                name: name,
+                address: address,
+                csz: csz
+            };
+
+            try {
+                const response = await fetch('/USStateDocumentOutput/Details', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const html = await response.text();
+
+                    const newWindow = window.open("", "_blank");
+                    newWindow.document.open();
+                    newWindow.document.write(html);
+                    newWindow.document.close();
+                } else {
+                    console.error('Error posting data:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+            }
+        }
+
+        function validateInput(inputElement, errorElement) {
+            if (inputElement.value.trim() === "") {
+                inputElement.classList.add("input-error");
+                errorElement.style.display = "block";
+            } else {
+                inputElement.classList.remove("input-error");
+                errorElement.style.display = "none";
+            }
+        }
+
+        document.getElementById("name").addEventListener("input", function () {
+            validateInput(this, document.getElementById("name-error"));
+        });
+
+        document.getElementById("address").addEventListener("input", function () {
+            validateInput(this, document.getElementById("address-error"));
+        });
+
+        document.getElementById("csz").addEventListener("input", function () {
+            validateInput(this, document.getElementById("csz-error"));
+        });
+
+        // Optional: Revalidate on blur event for more feedback on leaving the field
+        document.getElementById("name").addEventListener("blur", function () {
+            validateInput(this, document.getElementById("name-error"));
+        });
+
+        document.getElementById("address").addEventListener("blur", function () {
+            validateInput(this, document.getElementById("address-error"));
+        });
+
+        document.getElementById("csz").addEventListener("blur", function () {
+            validateInput(this, document.getElementById("csz-error"));
+        });
+    </script>
